@@ -1,0 +1,1615 @@
+<?php
+require_once __DIR__ . '/config/database.php';
+$pdo = Database::getConnection();
+$dbDriver = Database::getDriver();
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Penilaian SMP Terpadu — Sistem Informasi Penilaian & Analisis Nilai</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Chart.js for Pie Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- SheetJS (xlsx) for Dynamic Excel Import & Informative Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- ==================== HALAMAN LOGIN (FORM DI KIRI & INFORMASI APLIKASI DI KANAN) ==================== -->
+    <div id="loginScreen" class="fixed inset-0 z-50 bg-slate-900/95 flex items-center justify-center p-4 lg:p-8 overflow-y-auto no-print hidden">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden border border-slate-200 grid grid-cols-1 lg:grid-cols-12 my-auto">
+            
+            <!-- KOLOM KIRI: FORM LOGIN -->
+            <div class="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-center bg-white border-b lg:border-b-0 lg:border-r border-slate-100">
+                <div class="flex items-center gap-3.5 mb-6">
+                    <div id="loginLogoBox" class="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center shadow-md shrink-0 overflow-hidden p-1">
+                        <img src="assets/img/logo-login.jpg" alt="Logo Aplikasi" class="w-full h-full object-contain">
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-extrabold uppercase tracking-widest text-blue-600 block">Portal Autentikasi</span>
+                        <h1 class="text-lg font-extrabold tracking-tight text-slate-900 leading-tight" id="loginSchoolName">SMP NEGERI 1 NUSANTARA</h1>
+                    </div>
+                </div>
+
+                <div class="mb-5">
+                    <h2 class="text-base font-extrabold text-slate-800">Masuk ke Akun Anda</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Silakan masuk sebagai Administrator atau Guru Mata Pelajaran</p>
+                </div>
+
+                <form id="loginForm" class="space-y-4">
+                    <div id="loginError" class="hidden bg-red-50 border border-red-200 text-red-700 text-xs font-semibold px-3.5 py-2.5 rounded-xl"></div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Username / NIP Guru</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-id-badge absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                            <input type="text" id="loginUsername" required value="" placeholder="Masukkan username atau NIP Guru"
+                                class="w-full pl-10 pr-4 py-2.5 text-sm font-semibold border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-slate-50/50 focus:bg-white transition">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Password</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-lock absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                            <input type="password" id="loginPassword" required value="" placeholder="Masukkan password"
+                                class="w-full pl-10 pr-10 py-2.5 text-sm font-semibold border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-slate-50/50 focus:bg-white transition">
+                            <button type="button" onclick="App.togglePassword('loginPassword', 'loginPasswordEye')" title="Tampilkan / Sembunyikan Password"
+                                class="absolute right-3 top-2.5 text-slate-400 hover:text-blue-600 transition p-0.5">
+                                <i id="loginPasswordEye" class="fa-solid fa-eye text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl shadow-lg shadow-blue-600/25 transition flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-solid fa-right-to-bracket"></i> Masuk Aplikasi
+                    </button>
+                </form>
+            </div>
+
+            <!-- KOLOM KANAN: INFORMASI APLIKASI -->
+            <div class="lg:col-span-7 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden">
+                <div class="relative z-10 space-y-5">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-bold">
+                        <i class="fa-solid fa-sparkles"></i>
+                        <span id="loginInfoTa">Sistem Informasi Penilaian Terpadu • TA 2026/2027</span>
+                    </div>
+
+                    <div>
+                        <h2 class="text-2xl font-extrabold tracking-tight text-white leading-snug">
+                            E-Penilaian & Analisis Nilai Akhir Sekolah Menengah Pertama
+                        </h2>
+                        <p class="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                            Platform terintegrasi untuk pengelolaan nilai sumatif, rekapitulasi legger matriks kelas, pengolahan nilai ujian sekolah & rapor 6 semester Kelas IX, serta pencetakan SKNR, SKL, dan Transkrip Nilai.
+                        </p>
+                    </div>
+
+                    <!-- Daftar Fitur Utama Aplikasi -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div class="bg-white/5 backdrop-blur-xs border border-white/10 rounded-2xl p-3.5 flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0 mt-0.5">
+                                <i class="fa-solid fa-chart-pie"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-extrabold text-white">1. Dashboard & Pie Chart</h3>
+                                <p class="text-[11px] text-slate-300 mt-0.5">Kartu statistik siswa tiap jenjang (VII, VIII, IX) & analisis nilai per mapel, guru, dan kelas.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white/5 backdrop-blur-xs border border-white/10 rounded-2xl p-3.5 flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0 mt-0.5">
+                                <i class="fa-solid fa-file-excel"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-extrabold text-white">2. Manajemen Data & Excel</h3>
+                                <p class="text-[11px] text-slate-300 mt-0.5">Ekspor/impor Excel dinamis untuk Data Guru (multi-ampuan), Murid, Kartu Kelas & Mapel.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white/5 backdrop-blur-xs border border-white/10 rounded-2xl p-3.5 flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
+                                <i class="fa-solid fa-table-cells"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-extrabold text-white">3. Nilai Sumatif & Legger</h3>
+                                <p class="text-[11px] text-slate-300 mt-0.5">Jumlah sumatif dinamis per kelas, bobot STS/SAS, mapel lintas agama, legger & cetak ber-TTD.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white/5 backdrop-blur-xs border border-white/10 rounded-2xl p-3.5 flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center shrink-0 mt-0.5">
+                                <i class="fa-solid fa-award"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-extrabold text-white">4. Analisis Nilai Kelas IX</h3>
+                                <p class="text-[11px] text-slate-300 mt-0.5">Input rapor 6 semester, US Tulis & Praktik, Cetak SKNR, SKL & Transkrip Nilai.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative z-10 pt-4 mt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
+                    <span id="loginFooterAddress"><i class="fa-solid fa-location-dot mr-1 text-blue-400"></i> Jl. Pendidikan No. 45, Kabupaten Nusantara</span>
+                    <span>Kepsek: <b class="text-slate-200" id="loginFooterKepsek">Dr. H. Hendra Wijaya, M.Pd.</b></span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==================== LAYOUT UTAMA APLIKASI (NAVIGASI DI ATAS, NO-PRINT) ==================== -->
+    <div id="appShell" class="flex flex-col flex-1 min-h-screen no-print">
+        
+        <!-- TOP NAVIGATION BAR (PINDAHAN DARI SIDEBAR KIRI KE ATAS) -->
+        <header class="bg-slate-900 text-slate-200 border-b border-slate-800 shadow-lg select-none sticky top-0 z-40">
+            <div class="px-4 lg:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
+                <!-- Brand Sekolah -->
+                <div class="flex items-center gap-3 min-w-0">
+                    <div id="sidebarLogoContainer" class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shrink-0 overflow-hidden">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <h2 id="sidebarSchoolName" class="font-extrabold text-sm text-white truncate max-w-[220px] sm:max-w-[280px]">SMPN 1 NUSANTARA</h2>
+                        <p id="sidebarTaSem" class="text-[11px] text-blue-400 font-semibold">TA 2026/2027 • Ganjil</p>
+                    </div>
+                </div>
+
+                <!-- Menu Utama Horizontal di Atas -->
+                <nav class="flex flex-wrap items-center gap-1.5 py-1">
+                    <button onclick="App.switchMenu('dashboard')" id="nav-dashboard" class="nav-item active flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span>1. Dashboard</span>
+                    </button>
+
+                    <button onclick="App.switchMenu('manajemen')" id="nav-manajemen" class="nav-item flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+                        <i class="fa-solid fa-database"></i>
+                        <span>2. Manajemen Data</span>
+                    </button>
+
+                    <button onclick="App.switchMenu('sumatif')" id="nav-sumatif" class="nav-item flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+                        <i class="fa-solid fa-file-pen"></i>
+                        <span>3. Nilai Sumatif</span>
+                    </button>
+
+                    <button onclick="App.switchMenu('kelas9')" id="nav-kelas9" class="nav-item flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+                        <i class="fa-solid fa-award"></i>
+                        <span>4. Analisis Kelas IX</span>
+                    </button>
+
+                    <button onclick="App.switchMenu('pengaturan')" id="nav-pengaturan" class="nav-item flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition">
+                        <i class="fa-solid fa-sliders"></i>
+                        <span>5. Pengaturan</span>
+                    </button>
+                </nav>
+
+                <!-- Info User, Ubah Password & Upload Foto, Engine DB & Tombol Logout -->
+                <div class="flex items-center gap-2">
+                    <div onclick="App.openProfileModal()" title="Klik untuk Upload Foto & Ubah Password" class="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 border border-slate-700/70 hover:border-blue-500/60 transition cursor-pointer">
+                        <div id="sidebarUserAvatar" class="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-300 font-bold text-xs shrink-0 overflow-hidden">
+                            <i class="fa-solid fa-user-tie"></i>
+                        </div>
+                        <div class="leading-tight hidden sm:block">
+                            <p id="sidebarUserName" class="text-[11px] font-bold text-white truncate max-w-[140px]">Administrator</p>
+                            <span id="sidebarUserRoleBadge" class="inline-block text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/20">
+                                Admin Sekolah
+                            </span>
+                        </div>
+                    </div>
+                    <button onclick="App.openProfileModal()" title="Upload Foto Profil & Ubah Password (Admin / Guru)" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-xl text-xs font-extrabold shadow-md shadow-indigo-600/20 transition cursor-pointer">
+                        <i class="fa-solid fa-user-pen"></i>
+                        <span class="hidden md:inline">Foto & Password</span>
+                    </button>
+                    <span id="dbDriverBadge" class="hidden"><?php echo htmlspecialchars($dbDriver); ?></span>
+                    <button onclick="App.logout()" title="Keluar dari Aplikasi (Logout)" class="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3.5 py-2 rounded-xl text-xs font-extrabold shadow-md shadow-red-600/20 transition cursor-pointer">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- KONTEN UTAMA -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            
+            <!-- SUB-HEADER INFORMASI HALAMAN AKTIF -->
+            <div class="bg-white border-b border-slate-200 px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h1 id="pageTitle" class="text-lg font-extrabold text-slate-800">1. Dashboard Statistik & Analisis Nilai</h1>
+                    <p id="pageSubtitle" class="text-xs text-slate-500">Ringkasan data siswa per jenjang serta grafik progres & analisis nilai</p>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <div class="hidden sm:flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-800 px-3 py-1.5 rounded-xl text-xs font-bold">
+                        <i class="fa-solid fa-calendar-check text-blue-600"></i>
+                        <span id="topTaSemester">TA 2026/2027 - Semester Ganjil</span>
+                    </div>
+                    <div class="hidden md:flex items-center gap-2 bg-slate-100 border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-semibold">
+                        <i class="fa-solid fa-clock text-slate-500"></i>
+                        <span id="topHariSekolah">5 Hari Kerja</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AREA HALAMAN DINAMIS -->
+            <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+                <!-- ======================================================================= -->
+                <!-- 1. VIEW DASHBOARD                                                       -->
+                <!-- ======================================================================= -->
+                <section id="view-dashboard" class="space-y-6">
+                    <!-- Baris 1: Kartu Informasi Ringkas Umum -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="dashboardSummaryCards"></div>
+
+                    <!-- Baris 2: Statistik Siswa Tiap Jenjang (Kelas VII, VIII, IX) dalam Bentuk Kartu -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-layer-group text-blue-600"></i>
+                                    Informasi Ringkas & Statistik Siswa Tiap Jenjang
+                                </h2>
+                                <p class="text-xs text-slate-500">Distribusi rombongan belajar, jumlah murid, komposisi agama, dan rata-rata capaian nilai per jenjang</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="dashboardJenjangCards"></div>
+                    </div>
+
+                    <!-- Baris 3: Progres & Analisis Nilai Siswa (Per Mapel, Per Guru, Per Kelas) dalam Bentuk Pie Chart -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                        <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
+                            <div>
+                                <h2 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                                    <i class="fa-solid fa-chart-pie text-indigo-600"></i>
+                                    Progres & Analisis Nilai Siswa (Pie Chart)
+                                </h2>
+                                <p class="text-xs text-slate-500">Visualisasi perbandingan rata-rata nilai & progres ketuntasan penilaian per mata pelajaran, per guru, dan per kelas</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label class="text-xs font-bold text-slate-600">Mode Analisis Pie Chart:</label>
+                                <select id="dashboardChartMode" onchange="App.renderDashboardCharts()" class="text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <option value="rata_nilai">Analisis Rata-Rata Nilai Rapor</option>
+                                    <option value="progres_input">Progres Persentase Input Nilai (%)</option>
+                                    <option value="ketuntasan">Jumlah Nilai Tuntas (Nilai ≥ 75)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Pie Chart 1: Per Mapel -->
+                            <div class="bg-slate-50/70 rounded-2xl p-4 border border-slate-200/80 flex flex-col">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                                        <i class="fa-solid fa-book-open text-blue-600 mr-1"></i> Analisis Nilai per Mapel
+                                    </h3>
+                                    <span id="badgeChartMapel" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">10 Mapel</span>
+                                </div>
+                                <div class="relative h-64 flex items-center justify-center">
+                                    <canvas id="pieChartMapel"></canvas>
+                                </div>
+                                <div id="legendChartMapel" class="mt-3 text-xs space-y-1 max-h-36 overflow-y-auto pr-1"></div>
+                            </div>
+
+                            <!-- Pie Chart 2: Per Guru -->
+                            <div class="bg-slate-50/70 rounded-2xl p-4 border border-slate-200/80 flex flex-col">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                                        <i class="fa-solid fa-chalkboard-user text-emerald-600 mr-1"></i> Analisis Nilai per Guru
+                                    </h3>
+                                    <span id="badgeChartGuru" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">6 Guru</span>
+                                </div>
+                                <div class="relative h-64 flex items-center justify-center">
+                                    <canvas id="pieChartGuru"></canvas>
+                                </div>
+                                <div id="legendChartGuru" class="mt-3 text-xs space-y-1 max-h-36 overflow-y-auto pr-1"></div>
+                            </div>
+
+                            <!-- Pie Chart 3: Per Kelas -->
+                            <div class="bg-slate-50/70 rounded-2xl p-4 border border-slate-200/80 flex flex-col">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                                        <i class="fa-solid fa-school text-amber-600 mr-1"></i> Analisis Nilai per Kelas
+                                    </h3>
+                                    <span id="badgeChartKelas" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">6 Kelas</span>
+                                </div>
+                                <div class="relative h-64 flex items-center justify-center">
+                                    <canvas id="pieChartKelas"></canvas>
+                                </div>
+                                <div id="legendChartKelas" class="mt-3 text-xs space-y-1 max-h-36 overflow-y-auto pr-1"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ======================================================================= -->
+                <!-- 2. VIEW MANAJEMEN DATA (GURU, MURID, KELAS, MAPEL)                      -->
+                <!-- ======================================================================= -->
+                <section id="view-manajemen" class="space-y-5 hidden">
+                    <!-- Sub-Navigasi Tab Manajemen Data -->
+                    <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap gap-2">
+                        <button onclick="App.switchMasterTab('guru')" id="tab-master-guru" class="px-4 py-2.5 rounded-xl text-xs font-bold transition bg-blue-600 text-white shadow-sm">
+                            <i class="fa-solid fa-chalkboard-user mr-1.5"></i> Data Guru
+                        </button>
+                        <button onclick="App.switchMasterTab('murid')" id="tab-master-murid" class="px-4 py-2.5 rounded-xl text-xs font-bold transition text-slate-600 hover:bg-slate-100">
+                            <i class="fa-solid fa-user-graduate mr-1.5"></i> Data Murid
+                        </button>
+                        <button onclick="App.switchMasterTab('kelas')" id="tab-master-kelas" class="px-4 py-2.5 rounded-xl text-xs font-bold transition text-slate-600 hover:bg-slate-100">
+                            <i class="fa-solid fa-door-open mr-1.5"></i> Data Kelas
+                        </button>
+                        <button onclick="App.switchMasterTab('mapel')" id="tab-master-mapel" class="px-4 py-2.5 rounded-xl text-xs font-bold transition text-slate-600 hover:bg-slate-100">
+                            <i class="fa-solid fa-book mr-1.5"></i> Data Mapel
+                        </button>
+                    </div>
+
+                    <!-- 2A. PANEL DATA GURU -->
+                    <div id="panel-master-guru" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                            <div>
+                                <h2 class="text-base font-extrabold text-slate-800">Manajemen Data Guru & Ampuan</h2>
+                                <p class="text-xs text-slate-500">Mendukung multi-mapel dan multi-kelas ampuan, upload foto, reset password, serta ekspor/impor Excel dinamis</p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button onclick="App.openGuruModal()" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-plus"></i> Tambah Guru Manual
+                                </button>
+                                <button onclick="App.exportGuruExcel()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-file-excel"></i> Ekspor Excel
+                                </button>
+                                <button onclick="App.downloadTemplateGuruExcel()" class="px-3 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 text-xs font-bold transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-download"></i> Format/Template Excel
+                                </button>
+                                <label class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                                    <i class="fa-solid fa-file-import"></i> Impor Excel
+                                    <input type="file" accept=".xlsx,.xls" class="hidden" onchange="App.importGuruExcel(event)">
+                                </label>
+                                <button onclick="App.deleteAllGuru()" class="px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 text-xs font-bold transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-trash-can"></i> Hapus Semua Guru
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-700 uppercase font-extrabold border-y border-slate-200">
+                                        <th class="py-3 px-3 w-12 text-center">No</th>
+                                        <th class="py-3 px-3 w-16 text-center">Foto</th>
+                                        <th class="py-3 px-3">Nama Guru</th>
+                                        <th class="py-3 px-3">NIP</th>
+                                        <th class="py-3 px-3">Mapel Ampuan</th>
+                                        <th class="py-3 px-3">Kelas Ampuan</th>
+                                        <th class="py-3 px-3">Username</th>
+                                        <th class="py-3 px-3">Password</th>
+                                        <th class="py-3 px-3 text-center w-48">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyGuru" class="divide-y divide-slate-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 2B. PANEL DATA MURID -->
+                    <div id="panel-master-murid" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4 hidden">
+                        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                            <div>
+                                <h2 class="text-base font-extrabold text-slate-800">Manajemen Data Murid</h2>
+                                <p class="text-xs text-slate-500">Kelola data peserta didik lintas jenjang, NIS/NISN, agama, serta ekspor/impor Excel dinamis</p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button onclick="App.openMuridModal()" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-plus"></i> Tambah Murid Manual
+                                </button>
+                                <button onclick="App.exportMuridExcel()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-file-excel"></i> Ekspor Excel
+                                </button>
+                                <button onclick="App.downloadTemplateMuridExcel()" class="px-3 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 text-xs font-bold transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-download"></i> Format/Template Excel
+                                </button>
+                                <label class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                                    <i class="fa-solid fa-file-import"></i> Impor Excel
+                                    <input type="file" accept=".xlsx,.xls" class="hidden" onchange="App.importMuridExcel(event)">
+                                </label>
+                                <button onclick="App.deleteAllMurid()" class="px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 text-xs font-bold transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-trash-can"></i> Hapus Semua Murid
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Filter Bar Murid -->
+                        <div class="flex flex-wrap items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                            <div class="flex items-center gap-2">
+                                <label class="text-xs font-bold text-slate-600">Filter Kelas:</label>
+                                <select id="filterMuridKelas" onchange="App.renderMuridTable()" class="text-xs font-semibold border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white">
+                                    <option value="">Semua Kelas</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label class="text-xs font-bold text-slate-600">Filter Agama:</label>
+                                <select id="filterMuridAgama" onchange="App.renderMuridTable()" class="text-xs font-semibold border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white">
+                                    <option value="">Semua Agama</option>
+                                    <option value="Islam">Islam</option>
+                                    <option value="Kristen">Kristen</option>
+                                    <option value="Katolik">Katolik</option>
+                                    <option value="Hindu">Hindu</option>
+                                    <option value="Buddha">Buddha</option>
+                                    <option value="Konghucu">Konghucu</option>
+                                </select>
+                            </div>
+                            <div class="flex-1 min-w-[200px]">
+                                <input type="text" id="searchMuridInput" oninput="App.renderMuridTable()" placeholder="Cari nama murid atau NIS/NISN..."
+                                    class="w-full text-xs border border-slate-300 rounded-lg px-3 py-1.5 bg-white">
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-700 uppercase font-extrabold border-y border-slate-200">
+                                        <th class="py-3 px-3 w-12 text-center">No</th>
+                                        <th class="py-3 px-3">Nama Murid</th>
+                                        <th class="py-3 px-3">NIS / NISN</th>
+                                        <th class="py-3 px-3">Agama</th>
+                                        <th class="py-3 px-3">Kelas</th>
+                                        <th class="py-3 px-3 text-center w-36">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyMurid" class="divide-y divide-slate-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 2C. PANEL DATA KELAS (KARTU SETIAP KELAS & TABEL) -->
+                    <div id="panel-master-kelas" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-5 hidden">
+                        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                            <div>
+                                <h2 class="text-base font-extrabold text-slate-800">Manajemen Data Kelas & Wali Kelas</h2>
+                                <p class="text-xs text-slate-500">Tampilan informasi dalam bentuk kartu setiap kelas disertai fitur tambah manual, hapus semua, dan ekspor/impor Excel</p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button onclick="App.openKelasModal()" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-plus"></i> Tambah Kelas Manual
+                                </button>
+                                <button onclick="App.exportKelasExcel()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-file-excel"></i> Ekspor Excel
+                                </button>
+                                <button onclick="App.downloadTemplateKelasExcel()" class="px-3 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 text-xs font-bold transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-download"></i> Format/Template Excel
+                                </button>
+                                <label class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                                    <i class="fa-solid fa-file-import"></i> Impor Excel
+                                    <input type="file" accept=".xlsx,.xls" class="hidden" onchange="App.importKelasExcel(event)">
+                                </label>
+                                <button onclick="App.deleteAllKelas()" class="px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 text-xs font-bold transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-trash-can"></i> Hapus Semua Kelas
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Kartu Setiap Kelas -->
+                        <div>
+                            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-3">
+                                <i class="fa-solid fa-grip mr-1 text-blue-600"></i> Informasi Kartu Setiap Kelas
+                            </h3>
+                            <div id="kelasCardGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                        </div>
+
+                        <!-- Tabel Data Kelas -->
+                        <div class="pt-2">
+                            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-2">
+                                <i class="fa-solid fa-table-list mr-1 text-slate-600"></i> Daftar Tabel Kelas
+                            </h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-xs">
+                                    <thead>
+                                        <tr class="bg-slate-100 text-slate-700 uppercase font-extrabold border-y border-slate-200">
+                                            <th class="py-3 px-3 w-12 text-center">No</th>
+                                            <th class="py-3 px-3">Kode Kelas</th>
+                                            <th class="py-3 px-3">Nama Kelas</th>
+                                            <th class="py-3 px-3">Jenjang</th>
+                                            <th class="py-3 px-3">Nama Wali Kelas</th>
+                                            <th class="py-3 px-3 text-center">Jumlah Murid</th>
+                                            <th class="py-3 px-3 text-center w-36">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyKelas" class="divide-y divide-slate-200"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2D. PANEL DATA MAPEL -->
+                    <div id="panel-master-mapel" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4 hidden">
+                        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                            <div>
+                                <h2 class="text-base font-extrabold text-slate-800">Manajemen Data Mata Pelajaran</h2>
+                                <p class="text-xs text-slate-500">Dilengkapi Nomor Urut Transkrip, penanda Mapel Pendidikan Agama (lintas agama siswa), dan ekspor/impor Excel</p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button onclick="App.openMapelModal()" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-plus"></i> Tambah Mapel Manual
+                                </button>
+                                <button onclick="App.exportMapelExcel()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-file-excel"></i> Ekspor Excel
+                                </button>
+                                <button onclick="App.downloadTemplateMapelExcel()" class="px-3 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 text-xs font-bold transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-download"></i> Format/Template Excel
+                                </button>
+                                <label class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                                    <i class="fa-solid fa-file-import"></i> Impor Excel
+                                    <input type="file" accept=".xlsx,.xls" class="hidden" onchange="App.importMapelExcel(event)">
+                                </label>
+                                <button onclick="App.deleteAllMapel()" class="px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 text-xs font-bold transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-trash-can"></i> Hapus Semua Mapel
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-700 uppercase font-extrabold border-y border-slate-200">
+                                        <th class="py-3 px-3 w-14 text-center">No</th>
+                                        <th class="py-3 px-3 w-36 text-center">No. Urut Transkrip</th>
+                                        <th class="py-3 px-3">Nama Mata Pelajaran</th>
+                                        <th class="py-3 px-3 text-center">Kategori Mapel</th>
+                                        <th class="py-3 px-3 text-center w-36">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyMapel" class="divide-y divide-slate-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ======================================================================= -->
+                <!-- 3. VIEW NILAI SUMATIF (INPUT NILAI & REKAP LEGGER + CETAK)              -->
+                <!-- ======================================================================= -->
+                <section id="view-sumatif" class="space-y-5 hidden">
+                    <!-- Sub-Navigasi Nilai Sumatif -->
+                    <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap gap-2">
+                        <button onclick="App.switchSumatifTab('input')" id="tab-sumatif-input" class="px-4 py-2.5 rounded-xl text-xs font-bold transition bg-blue-600 text-white shadow-sm">
+                            <i class="fa-solid fa-pen-to-square mr-1.5"></i> Input Nilai Sumatif
+                        </button>
+                        <button onclick="App.switchSumatifTab('rekap')" id="tab-sumatif-rekap" class="px-4 py-2.5 rounded-xl text-xs font-bold transition text-slate-600 hover:bg-slate-100">
+                            <i class="fa-solid fa-table-cells mr-1.5"></i> Rekap Nilai Sumatif (Legger, Statistik Antar Kelas & Cetak)
+                        </button>
+                    </div>
+
+                    <!-- 3A. PANEL INPUT NILAI SUMATIF -->
+                    <div id="panel-sumatif-input" class="space-y-4">
+                        <!-- Konfigurasi Filter, Jumlah Sumatif per Kelas, Bobot, dan Filter Agama -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Pilih Kelas</label>
+                                    <select id="sumatifKelasSelect" onchange="App.onSumatifFilterChange()" class="w-full text-sm font-bold border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Pilih Mata Pelajaran</label>
+                                    <select id="sumatifMapelSelect" onchange="App.onSumatifFilterChange()" class="w-full text-sm font-bold border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">
+                                        Filter Agama / Mapel Agama Berbeda
+                                    </label>
+                                    <select id="sumatifAgamaFilter" onchange="App.renderSumatifInputTable()" class="w-full text-sm font-bold border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <option value="">Tampilkan Semua Siswa (Semua Agama)</option>
+                                        <option value="Islam">Khusus Siswa Agama Islam</option>
+                                        <option value="Kristen">Khusus Siswa Agama Kristen</option>
+                                        <option value="Katolik">Khusus Siswa Agama Katolik</option>
+                                        <option value="Hindu">Khusus Siswa Agama Hindu</option>
+                                        <option value="Buddha">Khusus Siswa Agama Buddha</option>
+                                        <option value="Konghucu">Khusus Siswa Agama Konghucu</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Pengaturan Dinamis Banyaknya Sumatif Per Kelas & Bobot Penilaian -->
+                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 pt-3 border-t border-slate-100 items-end">
+                                <div class="lg:col-span-4 bg-blue-50/70 border border-blue-200/80 rounded-xl p-3">
+                                    <label class="block text-[11px] font-extrabold uppercase text-blue-900 mb-1.5">
+                                        <i class="fa-solid fa-sliders mr-1"></i> Banyaknya Nilai Sumatif (Khusus Kelas Ini)
+                                    </label>
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" onclick="App.adjustJmlSumatif(-1)" class="w-9 h-9 rounded-lg bg-white border border-blue-300 text-blue-700 font-extrabold hover:bg-blue-100 transition">-</button>
+                                        <input type="number" id="inputJmlSumatif" min="1" max="12" value="3" onchange="App.applyKonfigSumatif()"
+                                            class="w-16 text-center font-extrabold text-sm py-1.5 border border-blue-300 rounded-lg bg-white">
+                                        <button type="button" onclick="App.adjustJmlSumatif(1)" class="w-9 h-9 rounded-lg bg-white border border-blue-300 text-blue-700 font-extrabold hover:bg-blue-100 transition">+</button>
+                                        <span class="text-xs font-semibold text-blue-800 ml-1" id="labelKolomSumatif">(Kolom S1 - S3)</span>
+                                    </div>
+                                </div>
+
+                                <div class="lg:col-span-5 bg-indigo-50/70 border border-indigo-200/80 rounded-xl p-3">
+                                    <label class="block text-[11px] font-extrabold uppercase text-indigo-900 mb-1.5">
+                                        <i class="fa-solid fa-scale-balanced mr-1"></i> Pengaturan Bobot Nilai Akhir (%)
+                                    </label>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <div>
+                                            <span class="block text-[10px] font-bold text-slate-600">Bobot Rerata Sumatif</span>
+                                            <div class="relative">
+                                                <input type="number" id="bobotSumatifInput" min="0" max="100" value="50" oninput="App.recalcSumatifTableLive()"
+                                                    class="w-full text-xs font-bold border border-indigo-300 rounded-lg px-2 py-1.5 bg-white pr-6">
+                                                <span class="absolute right-2 top-1.5 text-xs text-slate-400 font-bold">%</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="block text-[10px] font-bold text-slate-600">Bobot STS</span>
+                                            <div class="relative">
+                                                <input type="number" id="bobotStsInput" min="0" max="100" value="25" oninput="App.recalcSumatifTableLive()"
+                                                    class="w-full text-xs font-bold border border-indigo-300 rounded-lg px-2 py-1.5 bg-white pr-6">
+                                                <span class="absolute right-2 top-1.5 text-xs text-slate-400 font-bold">%</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="block text-[10px] font-bold text-slate-600">Bobot SAS</span>
+                                            <div class="relative">
+                                                <input type="number" id="bobotSasInput" min="0" max="100" value="25" oninput="App.recalcSumatifTableLive()"
+                                                    class="w-full text-xs font-bold border border-indigo-300 rounded-lg px-2 py-1.5 bg-white pr-6">
+                                                <span class="absolute right-2 top-1.5 text-xs text-slate-400 font-bold">%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="lg:col-span-3 flex flex-col gap-2">
+                                    <button type="button" onclick="App.applyKonfigSumatif()" class="w-full py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition">
+                                        <i class="fa-solid fa-check-double mr-1"></i> Terapkan Kolom & Bobot
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Banner Khusus Mapel Agama Berbeda -->
+                            <div id="agamaSpecialBanner" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0">
+                                        <i class="fa-solid fa-hands-praying"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-extrabold text-amber-900">Mode Input Nilai Anak dengan Mapel Agama yang Berbeda Aktif</h4>
+                                        <p class="text-[11px] text-amber-800">Setiap siswa ditampilkan beserta Agama dan pilihan Mapel Pendidikan Agama spesifiknya (Islam, Kristen, Katolik, Hindu, Buddha, Konghucu).</p>
+                                    </div>
+                                </div>
+                                <div id="agamaQuickPills" class="flex flex-wrap gap-1.5"></div>
+                            </div>
+                        </div>
+
+                        <!-- Tabel Input Nilai Sumatif -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    <h3 class="text-sm font-extrabold text-slate-800" id="sumatifTableHeading">Daftar Input Nilai Sumatif</h3>
+                                    <p class="text-xs text-slate-500" id="sumatifTableSubheading">Ketik nilai langsung pada tabel, Rerata Sumatif & Nilai Akhir/Rapor dihitung otomatis</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button onclick="App.saveAllNilaiSumatif()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-floppy-disk"></i> Simpan Nilai Sumatif
+                                    </button>
+                                    <button onclick="App.exportSumatifExcel()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-file-excel"></i> Ekspor Excel Informatif
+                                    </button>
+                                    <label class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                                        <i class="fa-solid fa-file-import"></i> Impor Nilai Excel
+                                        <input type="file" accept=".xlsx,.xls" class="hidden" onchange="App.importSumatifExcel(event)">
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-xs" id="tableInputSumatif">
+                                    <thead id="theadInputSumatif"></thead>
+                                    <tbody id="tbodyInputSumatif" class="divide-y divide-slate-200"></tbody>
+                                    <tfoot id="tfootInputSumatif"></tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3B. PANEL REKAP NILAI SUMATIF (LEGGER MATRIKS, KARTU TIAP KELAS, STATISTIK ANTAR KELAS, CETAK) -->
+                    <div id="panel-sumatif-rekap" class="space-y-6 hidden">
+                        <!-- Kartu Informasi Tiap Kelas -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                                <div>
+                                    <h3 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                                        <i class="fa-solid fa-id-card-clip text-blue-600"></i>
+                                        Kartu Informasi Rekapitulasi Tiap Kelas
+                                    </h3>
+                                    <p class="text-xs text-slate-500">Klik pada kartu kelas untuk langsung menampilkan Legger Matriks kelas tersebut</p>
+                                </div>
+                            </div>
+                            <div id="rekapKelasCards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                        </div>
+
+                        <!-- Kontrol Rekapitulasi Legger & Cetak -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                            <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <div>
+                                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Jenis Tampilan Rekap</label>
+                                        <select id="rekapJenisSelect" onchange="App.renderRekapSumatif()" class="text-xs font-bold border border-slate-300 rounded-xl px-3 py-2 bg-slate-50">
+                                            <option value="legger_kelas">Legger Matriks per Kelas (Semua Mapel)</option>
+                                            <option value="per_mapel">Rekap Nilai Detail per Mapel & Kelas</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Pilih Kelas</label>
+                                        <select id="rekapKelasSelect" onchange="App.renderRekapSumatif()" class="text-xs font-bold border border-slate-300 rounded-xl px-3 py-2 bg-slate-50"></select>
+                                    </div>
+                                    <div id="rekapMapelWrapper" class="hidden">
+                                        <label class="block text-[11px] font-bold uppercase text-slate-500 mb-1">Pilih Mata Pelajaran</label>
+                                        <select id="rekapMapelSelect" onchange="App.renderRekapSumatif()" class="text-xs font-bold border border-slate-300 rounded-xl px-3 py-2 bg-slate-50"></select>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button onclick="App.exportLeggerExcel()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-file-excel"></i> Ekspor Excel Rekap/Legger
+                                    </button>
+                                    <button onclick="App.printRekap('legger')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-print"></i> Cetak Rekap Ini (TTD Wali Kelas & Kepsek)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 id="rekapMatrixTitle" class="text-sm font-extrabold text-slate-800 mb-1">Legger Nilai Matriks Kelas</h3>
+                                <p id="rekapMatrixSubtitle" class="text-xs text-slate-500 mb-3"></p>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left border-collapse text-xs" id="tableRekapMatrix">
+                                        <thead id="theadRekapMatrix"></thead>
+                                        <tbody id="tbodyRekapMatrix" class="divide-y divide-slate-200"></tbody>
+                                        <tfoot id="tfootRekapMatrix"></tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Statistik Nilai Antar Kelas (Sumatif, STS, SAS, Nilai Rapor) -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                            <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                                <div>
+                                    <h3 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                                        <i class="fa-solid fa-chart-column text-indigo-600"></i>
+                                        Statistik Nilai Antar Kelas (Rerata Sumatif, STS, SAS, dan Nilai Rapor)
+                                    </h3>
+                                    <p class="text-xs text-slate-500">Perbandingan komprehensif komponen penilaian antar seluruh kelas</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <select id="statAntarKelasMapelFilter" onchange="App.renderStatistikAntarKelas()" class="text-xs font-bold border border-slate-300 rounded-xl px-3 py-2 bg-slate-50">
+                                        <option value="">Semua Mata Pelajaran (Gabungan)</option>
+                                    </select>
+                                    <button onclick="App.printRekap('statistik_antar_kelas')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-print"></i> Cetak Statistik Antar Kelas
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-xs">
+                                    <thead>
+                                        <tr class="bg-slate-100 text-slate-700 uppercase font-extrabold border-y border-slate-200">
+                                            <th class="py-3 px-3 text-center w-12">No</th>
+                                            <th class="py-3 px-3">Kode Kelas</th>
+                                            <th class="py-3 px-3">Nama Kelas</th>
+                                            <th class="py-3 px-3">Wali Kelas</th>
+                                            <th class="py-3 px-3 text-center">Jml Siswa</th>
+                                            <th class="py-3 px-3 text-center bg-blue-50/60">Rerata Nilai Sumatif</th>
+                                            <th class="py-3 px-3 text-center bg-indigo-50/60">Rerata Nilai STS</th>
+                                            <th class="py-3 px-3 text-center bg-purple-50/60">Rerata Nilai SAS</th>
+                                            <th class="py-3 px-3 text-center bg-emerald-50 font-extrabold text-emerald-900">Rerata Nilai Rapor</th>
+                                            <th class="py-3 px-3 text-center">Nilai Tertinggi</th>
+                                            <th class="py-3 px-3 text-center">Nilai Terendah</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyStatAntarKelas" class="divide-y divide-slate-200"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ======================================================================= -->
+                <!-- 4. VIEW ANALISIS KELAS IX                                               -->
+                <!-- ======================================================================= -->
+                <section id="view-kelas9" class="space-y-5 hidden">
+                    <!-- Sub-Navigasi Menu Analisis Kelas IX -->
+                    <div class="bg-white p-2 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap gap-2">
+                        <button onclick="App.switchKelas9Tab('input')" id="tab-k9-input" class="px-4 py-2.5 rounded-xl text-xs font-bold transition bg-blue-600 text-white shadow-sm">
+                            <i class="fa-solid fa-table-list mr-1.5"></i> Input & Analisis Nilai Kelas IX
+                        </button>
+                        <button onclick="App.switchKelas9Tab('sknr')" id="tab-k9-sknr" class="px-4 py-2.5 rounded-xl text-xs font-bold transition text-slate-600 hover:bg-slate-100">
+                            <i class="fa-solid fa-file-lines mr-1.5"></i> Cetak SKNR (Nilai Rapor Semester 1–5)
+                        </button>
+                        <button onclick="App.switchKelas9Tab('skl')" id="tab-k9-skl" class="px-4 py-2.5 rounded-xl text-xs font-bold transition text-slate-600 hover:bg-slate-100">
+                            <i class="fa-solid fa-graduation-cap mr-1.5"></i> Cetak SKL (Nilai Akhir Kelas IX)
+                        </button>
+                        <button onclick="App.switchKelas9Tab('transkrip')" id="tab-k9-transkrip" class="px-4 py-2.5 rounded-xl text-xs font-bold transition text-slate-600 hover:bg-slate-100">
+                            <i class="fa-solid fa-scroll mr-1.5"></i> Cetak Transkrip (Nilai Akhir Kelas IX)
+                        </button>
+                    </div>
+
+                    <!-- =================================================================== -->
+                    <!-- 4A. SUB MENU: INPUT & ANALISIS NILAI KELAS IX                       -->
+                    <!-- =================================================================== -->
+                    <div id="panel-k9-input" class="space-y-5">
+                        <!-- Filter & Pengaturan Bobot Kelas IX -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                            <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                                <div>
+                                    <h2 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                                        <i class="fa-solid fa-award text-blue-600"></i>
+                                        Analisis Nilai Kelas IX (Rapor Semester 1–6 & Ujian Sekolah Tulis/Praktik)
+                                    </h2>
+                                    <p class="text-xs text-slate-500">Pengolahan nilai kelulusan/transkrip akhir siswa Kelas IX dengan pengaturan bobot Rapor & Ujian Sekolah</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button onclick="App.printRekap('kelas9')" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-print"></i> Cetak Analisis Kelas IX
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Filter Kelas IX, Mapel, dan Agama -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Pilih Rombel Kelas IX</label>
+                                    <select id="k9KelasSelect" onchange="App.renderKelas9Table()" class="w-full text-sm font-bold border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Pilih Mata Pelajaran</label>
+                                    <select id="k9MapelSelect" onchange="App.renderKelas9Table()" class="w-full text-sm font-bold border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Filter Siswa (Mapel Agama Berbeda)</label>
+                                    <select id="k9AgamaFilter" onchange="App.renderKelas9Table()" class="w-full text-sm font-bold border border-slate-300 rounded-xl px-3 py-2.5 bg-slate-50">
+                                        <option value="">Semua Siswa (Semua Agama)</option>
+                                        <option value="Islam">Agama Islam</option>
+                                        <option value="Kristen">Agama Kristen</option>
+                                        <option value="Katolik">Agama Katolik</option>
+                                        <option value="Hindu">Agama Hindu</option>
+                                        <option value="Buddha">Agama Buddha</option>
+                                        <option value="Konghucu">Agama Konghucu</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Pengaturan Bobot Nilai Akhir (Rerata Rapor & Rerata US) + Bobot US (Tulis & Praktik) -->
+                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 pt-3 border-t border-slate-100 items-end">
+                                <!-- Bobot Nilai Akhir -->
+                                <div class="lg:col-span-5 bg-blue-50/70 border border-blue-200 rounded-xl p-3">
+                                    <label class="block text-[11px] font-extrabold uppercase text-blue-900 mb-1.5">
+                                        <i class="fa-solid fa-scale-balanced mr-1"></i> Pengaturan Bobot Nilai Akhir (Rerata Rapor & Rerata US)
+                                    </label>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <span class="block text-[10px] font-bold text-slate-600">Bobot Rerata Rapor (6 Sem)</span>
+                                            <div class="relative">
+                                                <input type="number" id="k9BobotRapor" min="0" max="100" value="60" oninput="App.recalcKelas9Live()"
+                                                    class="w-full text-xs font-bold border border-blue-300 rounded-lg px-2.5 py-1.5 bg-white pr-6">
+                                                <span class="absolute right-2 top-1.5 text-xs text-slate-400 font-bold">%</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="block text-[10px] font-bold text-slate-600">Bobot Rerata Ujian Sekolah (US)</span>
+                                            <div class="relative">
+                                                <input type="number" id="k9BobotUs" min="0" max="100" value="40" oninput="App.recalcKelas9Live()"
+                                                    class="w-full text-xs font-bold border border-blue-300 rounded-lg px-2.5 py-1.5 bg-white pr-6">
+                                                <span class="absolute right-2 top-1.5 text-xs text-slate-400 font-bold">%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bobot Nilai US -->
+                                <div class="lg:col-span-5 bg-emerald-50/70 border border-emerald-200 rounded-xl p-3">
+                                    <label class="block text-[11px] font-extrabold uppercase text-emerald-900 mb-1.5">
+                                        <i class="fa-solid fa-pen-ruler mr-1"></i> Pengaturan Bobot Nilai US (US Tulis & US Praktik)
+                                    </label>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <span class="block text-[10px] font-bold text-slate-600">Bobot Nilai US Tulis</span>
+                                            <div class="relative">
+                                                <input type="number" id="k9BobotUsTulis" min="0" max="100" value="60" oninput="App.recalcKelas9Live()"
+                                                    class="w-full text-xs font-bold border border-emerald-300 rounded-lg px-2.5 py-1.5 bg-white pr-6">
+                                                <span class="absolute right-2 top-1.5 text-xs text-slate-400 font-bold">%</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="block text-[10px] font-bold text-slate-600">Bobot Nilai US Praktik</span>
+                                            <div class="relative">
+                                                <input type="number" id="k9BobotUsPraktik" min="0" max="100" value="40" oninput="App.recalcKelas9Live()"
+                                                    class="w-full text-xs font-bold border border-emerald-300 rounded-lg px-2.5 py-1.5 bg-white pr-6">
+                                                <span class="absolute right-2 top-1.5 text-xs text-slate-400 font-bold">%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="lg:col-span-2">
+                                    <button type="button" onclick="App.saveKonfigKelas9()" class="w-full py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition">
+                                        <i class="fa-solid fa-sliders mr-1"></i> Simpan Bobot
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Banner Mapel Agama Kelas IX -->
+                            <div id="k9AgamaBanner" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0">
+                                        <i class="fa-solid fa-hands-praying"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-extrabold text-amber-900">Input Nilai Anak untuk Mapel Agama yang Berbeda (Kelas IX)</h4>
+                                        <p class="text-[11px] text-amber-800">Anda dapat memfilter agama siswa atau memilih spesifikasi Mapel Agama tiap siswa secara langsung.</p>
+                                    </div>
+                                </div>
+                                <div id="k9AgamaQuickPills" class="flex flex-wrap gap-1.5"></div>
+                            </div>
+                        </div>
+
+                        <!-- Tabel Input Nilai Kelas IX -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    <h3 class="text-sm font-extrabold text-slate-800" id="k9TableTitle">Tabel Input & Analisis Nilai Kelas IX</h3>
+                                    <p class="text-xs text-slate-500">Berisi Nilai Rapor 6 Semester, Rerata Rapor, Nilai US (Tulis & Praktik), Rerata US, Nilai Akhir, serta Aksi Edit & Reset</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button onclick="App.saveAllNilaiKelas9()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-floppy-disk"></i> Simpan Nilai
+                                    </button>
+                                    <button onclick="App.resetAllNilaiKelas9()" class="px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-600 text-red-600 hover:text-white border border-red-200 text-xs font-bold transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-rotate-left"></i> Reset Nilai
+                                    </button>
+                                    <button onclick="App.exportKelas9Excel()" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-file-excel"></i> Ekspor Excel Informatif
+                                    </button>
+                                    <label class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                                        <i class="fa-solid fa-file-import"></i> Impor Excel
+                                        <input type="file" accept=".xlsx,.xls" class="hidden" onchange="App.importKelas9Excel(event)">
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-xs">
+                                    <thead>
+                                        <tr class="bg-slate-100 text-slate-700 uppercase font-extrabold border-t border-slate-200">
+                                            <th rowspan="2" class="py-2.5 px-2 text-center border border-slate-200 w-10">No</th>
+                                            <th rowspan="2" class="py-2.5 px-3 border border-slate-200 min-w-[170px]">Nama Murid</th>
+                                            <th rowspan="2" class="py-2.5 px-2 text-center border border-slate-200">Agama / Mapel Agama</th>
+                                            <th colspan="6" class="py-2 px-2 text-center border border-slate-200 bg-blue-50 text-blue-900">Nilai Rapor 6 Semester</th>
+                                            <th rowspan="2" class="py-2.5 px-2 text-center border border-slate-200 bg-blue-100/80 text-blue-950">Rerata Rapor</th>
+                                            <th colspan="2" class="py-2 px-2 text-center border border-slate-200 bg-emerald-50 text-emerald-900">Ujian Sekolah (US)</th>
+                                            <th rowspan="2" class="py-2.5 px-2 text-center border border-slate-200 bg-emerald-100/80 text-emerald-950">Rerata US</th>
+                                            <th rowspan="2" class="py-2.5 px-2 text-center border border-slate-200 bg-amber-100 text-amber-950">Nilai Akhir</th>
+                                            <th rowspan="2" class="py-2.5 px-2 text-center border border-slate-200 w-28">Aksi</th>
+                                        </tr>
+                                        <tr class="bg-slate-50 text-slate-700 font-bold text-center border-b border-slate-200">
+                                            <th class="py-1.5 px-1 border border-slate-200">Sem 1</th>
+                                            <th class="py-1.5 px-1 border border-slate-200">Sem 2</th>
+                                            <th class="py-1.5 px-1 border border-slate-200">Sem 3</th>
+                                            <th class="py-1.5 px-1 border border-slate-200">Sem 4</th>
+                                            <th class="py-1.5 px-1 border border-slate-200">Sem 5</th>
+                                            <th class="py-1.5 px-1 border border-slate-200">Sem 6</th>
+                                            <th class="py-1.5 px-1 border border-slate-200">US Tulis</th>
+                                            <th class="py-1.5 px-1 border border-slate-200">US Praktik</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyKelas9" class="divide-y divide-slate-200"></tbody>
+                                    <tfoot id="tfootKelas9"></tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- =================================================================== -->
+                    <!-- 4B. SUB MENU: CETAK SKNR (NILAI RAPOR SEMESTER 1 SAMPAI 5)          -->
+                    <!-- =================================================================== -->
+                    <div id="panel-k9-sknr" class="space-y-5 hidden">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                            <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                                <div>
+                                    <h2 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                                        <i class="fa-solid fa-file-lines text-blue-600"></i>
+                                        Cetak SKNR — Surat Keterangan Nilai Rapor (Semester 1 s.d. Semester 5)
+                                    </h2>
+                                    <p class="text-xs text-slate-500">Menampilkan dan mencetak rekapitulasi nilai rapor Semester 1 sampai Semester 5 seluruh mata pelajaran untuk keperluan PPDB / Seleksi SMA-SMK</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button onclick="App.printDokumenKelas9('sknr', 'single')" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-print"></i> Cetak SKNR Siswa Ini
+                                    </button>
+                                    <button onclick="App.printDokumenKelas9('sknr', 'all')" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-layer-group"></i> Cetak Semua SKNR 1 Kelas
+                                    </button>
+                                    <button onclick="App.exportDokumenKelas9Excel('sknr')" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-file-excel"></i> Ekspor Excel SKNR (Sem 1–5)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Kontrol Pilih Kelas IX, Pilih Siswa, Nomor Surat, Jabatan & Titimangsa SKNR -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Pilih Rombel Kelas IX</label>
+                                    <select id="sknrKelasSelect" onchange="App.onKelas9DocClassChange('sknr')" class="w-full text-sm font-bold border border-slate-300 rounded-xl px-3 py-2 bg-slate-50"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Pilih Siswa Kelas IX</label>
+                                    <select id="sknrMuridSelect" onchange="App.renderSknrView()" class="w-full text-sm font-bold border border-slate-300 rounded-xl px-3 py-2 bg-slate-50"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Nomor Surat SKNR</label>
+                                    <input type="text" id="sknrNomorSurat" value="400.3.11/157/2026" oninput="App.renderSknrView()"
+                                        class="w-full text-sm font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Jabatan Penandatangan</label>
+                                    <input type="text" id="sknrJabatanKepsek" value="" placeholder="Kepala SMP ..." oninput="App.renderSknrView()"
+                                        class="w-full text-sm font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Tempat & Tanggal Cetak</label>
+                                    <input type="text" id="sknrTitimangsa" value="" placeholder="Banyumas, 2 Juni 2026" oninput="App.renderSknrView()"
+                                        class="w-full text-sm font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-white">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pratinjau Dokumen Cetak SKNR Siswa & Tabel Ringkas Kelas -->
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                            <div class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+                                <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-600 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-users mr-1 text-blue-600"></i> Daftar Siswa & Rerata Sem 1–5</span>
+                                    <span class="text-[10px] text-slate-400">Klik siswa untuk pratinjau</span>
+                                </h3>
+                                <div class="overflow-y-auto max-h-[600px]">
+                                    <table class="w-full text-left border-collapse text-xs">
+                                        <thead>
+                                            <tr class="bg-slate-100 text-slate-700 font-extrabold border-y border-slate-200">
+                                                <th class="py-2 px-2 text-center w-8">No</th>
+                                                <th class="py-2 px-2">Nama Siswa</th>
+                                                <th class="py-2 px-2 text-center">Rerata Sem 1–5</th>
+                                                <th class="py-2 px-2 text-center">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbodySknrStudentList" class="divide-y divide-slate-200"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                                <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                                    <span class="text-xs font-extrabold uppercase text-blue-600">
+                                        <i class="fa-solid fa-eye mr-1"></i> Pratinjau Lembar Cetak SKNR (Semester 1 s.d. 5)
+                                    </span>
+                                    <button onclick="App.printDokumenKelas9('sknr', 'single')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition">
+                                        <i class="fa-solid fa-print mr-1"></i> Cetak Lembar Ini
+                                    </button>
+                                </div>
+                                <div id="previewSknrBox" class="border border-slate-300 rounded-xl p-5 bg-white text-xs"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- =================================================================== -->
+                    <!-- 4C. SUB MENU: CETAK SKL (NILAI AKHIR DARI ANALISIS KELAS IX)        -->
+                    <!-- =================================================================== -->
+                    <div id="panel-k9-skl" class="space-y-5 hidden">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                            <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                                <div>
+                                    <h2 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                                        <i class="fa-solid fa-graduation-cap text-emerald-600"></i>
+                                        Cetak SKL — Surat Keterangan Lulus (Berisi Nilai Akhir Analisis Kelas IX)
+                                    </h2>
+                                    <p class="text-xs text-slate-500">Menampilkan dan mencetak Surat Keterangan Lulus resmi yang memuat Nilai Akhir dari hasil Analisis Kelas IX seluruh mata pelajaran</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button onclick="App.exportTemplateDataSkl()" class="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5" title="Unduh Template Excel Data SKL (Nama, NIS/NISN, Nomor Peserta Ujian)">
+                                        <i class="fa-solid fa-file-arrow-down"></i> Ekspor Template Data SKL
+                                    </button>
+                                    <label class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer" title="Impor File Excel Data SKL (Nama, NIS/NISN, Nomor Peserta Ujian)">
+                                        <i class="fa-solid fa-file-import"></i> Impor Template Data SKL
+                                        <input type="file" accept=".xlsx,.xls" class="hidden" onchange="App.importTemplateDataSkl(event)">
+                                    </label>
+                                    <button onclick="App.printDokumenKelas9('skl', 'single')" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-print"></i> Cetak SKL Siswa Ini
+                                    </button>
+                                    <button onclick="App.printDokumenKelas9('skl', 'all')" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-layer-group"></i> Cetak Semua SKL 1 Kelas
+                                    </button>
+                                    <button onclick="App.exportDokumenKelas9Excel('skl')" class="px-3 py-2 rounded-xl bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-table"></i> Rekap Nilai SKL
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Kontrol Pilih Kelas IX, Pilih Siswa, Nomor Surat, TTL, No Peserta Ujian & Titimangsa SKL -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Pilih Rombel Kelas IX</label>
+                                    <select id="sklKelasSelect" onchange="App.onKelas9DocClassChange('skl')" class="w-full text-sm font-bold border border-slate-300 rounded-xl px-3 py-2 bg-slate-50"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Pilih Siswa Kelas IX</label>
+                                    <select id="sklMuridSelect" onchange="App.onSklStudentChange()" class="w-full text-sm font-bold border border-slate-300 rounded-xl px-3 py-2 bg-slate-50"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Nomor Surat SKL</label>
+                                    <input type="text" id="sklNomorSurat" value="400.3.11.1/156/2026" oninput="App.renderSklView()"
+                                        class="w-full text-sm font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Tempat, Tgl. Lahir</label>
+                                    <input type="text" id="sklTtlSiswa" value="" placeholder="Purbalingga, 19 Januari 2011" oninput="App.onSklMetaInput()"
+                                        class="w-full text-sm font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Nomor Peserta Ujian</label>
+                                    <input type="text" id="sklNoPeserta" value="" placeholder="15-140-095" oninput="App.onSklMetaInput()"
+                                        class="w-full text-sm font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Tempat & Tanggal Cetak</label>
+                                    <input type="text" id="sklTitimangsa" value="" placeholder="Banyumas, 2 Juni 2026" oninput="App.renderSklView()"
+                                        class="w-full text-sm font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-white">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                            <div class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+                                <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-600 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-users mr-1 text-emerald-600"></i> Daftar Siswa & Rerata Nilai Akhir SKL</span>
+                                    <span class="text-[10px] text-slate-400">Klik siswa untuk pratinjau</span>
+                                </h3>
+                                <div class="overflow-y-auto max-h-[600px]">
+                                    <table class="w-full text-left border-collapse text-xs">
+                                        <thead>
+                                            <tr class="bg-slate-100 text-slate-700 font-extrabold border-y border-slate-200">
+                                                <th class="py-2 px-2 text-center w-8">No</th>
+                                                <th class="py-2 px-2">Nama Siswa</th>
+                                                <th class="py-2 px-2 text-center">Rerata Akhir</th>
+                                                <th class="py-2 px-2 text-center">Status</th>
+                                                <th class="py-2 px-2 text-center">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbodySklStudentList" class="divide-y divide-slate-200"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                                <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                                    <span class="text-xs font-extrabold uppercase text-emerald-600">
+                                        <i class="fa-solid fa-eye mr-1"></i> Pratinjau Lembar Cetak SKL (Nilai Akhir Kelas IX)
+                                    </span>
+                                    <button onclick="App.printDokumenKelas9('skl', 'single')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition">
+                                        <i class="fa-solid fa-print mr-1"></i> Cetak Lembar Ini
+                                    </button>
+                                </div>
+                                <div id="previewSklBox" class="border border-slate-300 rounded-xl p-5 bg-white text-xs"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- =================================================================== -->
+                    <!-- 4D. SUB MENU: CETAK TRANSKRIP (NILAI AKHIR DARI ANALISIS KELAS IX)  -->
+                    <!-- =================================================================== -->
+                    <div id="panel-k9-transkrip" class="space-y-5 hidden">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                            <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                                <div>
+                                    <h2 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                                        <i class="fa-solid fa-scroll text-purple-600"></i>
+                                        Cetak Transkrip Nilai Akhir Kelas IX
+                                    </h2>
+                                    <p class="text-xs text-slate-500">Menampilkan dan mencetak Transkrip Nilai Akhir resmi berdasarkan urutan transkrip mata pelajaran dari hasil Analisis Kelas IX</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button onclick="App.exportTemplateDataTranskrip()" class="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5" title="Unduh Template Excel Data Transkrip (Satuan Pendidikan, NPSN, Nama Lengkap, NISN, Nomor Ijazah)">
+                                        <i class="fa-solid fa-file-arrow-down"></i> Ekspor Template Data Transkrip
+                                    </button>
+                                    <label class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer" title="Impor File Excel Data Transkrip (Satuan Pendidikan, NPSN, Nama Lengkap, NISN, Nomor Ijazah)">
+                                        <i class="fa-solid fa-file-import"></i> Impor Template Data Transkrip
+                                        <input type="file" accept=".xlsx,.xls" class="hidden" onchange="App.importTemplateDataTranskrip(event)">
+                                    </label>
+                                    <button onclick="App.printDokumenKelas9('transkrip', 'single')" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-print"></i> Cetak Transkrip Siswa Ini
+                                    </button>
+                                    <button onclick="App.printDokumenKelas9('transkrip', 'all')" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-layer-group"></i> Cetak Semua Transkrip 1 Kelas
+                                    </button>
+                                    <button onclick="App.exportDokumenKelas9Excel('transkrip')" class="px-3 py-2 rounded-xl bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                        <i class="fa-solid fa-table"></i> Rekap Nilai Transkrip
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Kontrol Pilih Kelas IX, Pilih Siswa, Nomor Transkrip, TTL, Nomor Ijazah & Tanggal Kelulusan -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Pilih Rombel Kelas IX</label>
+                                    <select id="transkripKelasSelect" onchange="App.onKelas9DocClassChange('transkrip')" class="w-full text-sm font-bold border border-slate-300 rounded-xl px-3 py-2 bg-slate-50"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Pilih Siswa Kelas IX</label>
+                                    <select id="transkripMuridSelect" onchange="App.onTranskripStudentChange()" class="w-full text-sm font-bold border border-slate-300 rounded-xl px-3 py-2 bg-slate-50"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Nomor Transkrip</label>
+                                    <input type="text" id="transkripNomorSurat" value="400.3.11.1/158.1/2026" oninput="App.renderTranskripView()"
+                                        class="w-full text-sm font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Tempat, Tanggal Lahir</label>
+                                    <input type="text" id="transkripTtlSiswa" value="" placeholder="Banyumas, 13 November 2010" oninput="App.onTranskripMetaInput()"
+                                        class="w-full text-sm font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Nomor Ijazah</label>
+                                    <input type="text" id="transkripNomorIjazah" value="" placeholder="121202600155528" oninput="App.onTranskripMetaInput()"
+                                        class="w-full text-sm font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-extrabold uppercase text-slate-600 mb-1">Tanggal Kelulusan</label>
+                                    <input type="text" id="transkripTanggalLulus" value="2 Juni 2026" oninput="App.renderTranskripView()"
+                                        class="w-full text-sm font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-white">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                            <div class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 space-y-3">
+                                <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-600 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-users mr-1 text-purple-600"></i> Daftar Siswa & Nilai Transkrip</span>
+                                    <span class="text-[10px] text-slate-400">Klik siswa untuk pratinjau</span>
+                                </h3>
+                                <div class="overflow-y-auto max-h-[600px]">
+                                    <table class="w-full text-left border-collapse text-xs">
+                                        <thead>
+                                            <tr class="bg-slate-100 text-slate-700 font-extrabold border-y border-slate-200">
+                                                <th class="py-2 px-2 text-center w-8">No</th>
+                                                <th class="py-2 px-2">Nama Siswa</th>
+                                                <th class="py-2 px-2 text-center">Rerata Transkrip</th>
+                                                <th class="py-2 px-2 text-center">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbodyTranskripStudentList" class="divide-y divide-slate-200"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                                <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                                    <span class="text-xs font-extrabold uppercase text-purple-600">
+                                        <i class="fa-solid fa-eye mr-1"></i> Pratinjau Lembar Cetak Transkrip Nilai Akhir
+                                    </span>
+                                    <button onclick="App.printDokumenKelas9('transkrip', 'single')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition">
+                                        <i class="fa-solid fa-print mr-1"></i> Cetak Lembar Ini
+                                    </button>
+                                </div>
+                                <div id="previewTranskripBox" class="border border-slate-300 rounded-xl p-5 bg-white text-xs"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ======================================================================= -->
+                <!-- 5. VIEW PENGATURAN (SEKOLAH, KOP SURAT, TA/SEMESTER, BACKUP JSON & SQL) -->
+                <!-- ======================================================================= -->
+                <section id="view-pengaturan" class="space-y-6 hidden">
+                    
+                    <!-- Preview Langsung Kop Surat Resmi -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-extrabold uppercase tracking-wider text-blue-600">
+                                <i class="fa-solid fa-eye mr-1"></i> Pratinjau Kop Surat Resmi (Live Preview)
+                            </span>
+                            <span id="previewHariSekolahBadge" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">5 Hari Kerja</span>
+                        </div>
+                        <div id="liveKopSuratPreview" class="bg-white border border-slate-300 rounded-xl p-5 max-w-4xl mx-auto"></div>
+                    </div>
+
+                    <form id="formPengaturanSekolah" onsubmit="App.saveSettings(event)" class="space-y-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            
+                            <!-- KARTU 1: KOP SURAT, LOGO PEMDA (KIRI) & LOGO SEKOLAH (KANAN), SISTEM HARI SEKOLAH -->
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                                <h3 class="text-sm font-extrabold text-slate-800 border-b border-slate-100 pb-2.5 flex items-center gap-2">
+                                    <i class="fa-solid fa-heading text-blue-600"></i>
+                                    1. Kop Surat, Logo & Sistem Hari Sekolah
+                                </h3>
+
+                                <!-- Upload Logo Pemda (Kiri) & Logo Sekolah (Kanan) -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div class="border border-dashed border-slate-300 rounded-xl p-3 text-center bg-slate-50/60">
+                                        <p class="text-xs font-extrabold text-slate-700 mb-2">Logo Pemda (Kiri)</p>
+                                        <div id="previewBoxLogoPemda" class="w-20 h-20 mx-auto mb-2 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden">
+                                            <i class="fa-solid fa-landmark text-2xl text-slate-300"></i>
+                                        </div>
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <label class="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold cursor-pointer transition">
+                                                <i class="fa-solid fa-upload mr-1"></i> Upload Logo
+                                                <input type="file" accept="image/*" class="hidden" onchange="App.handleLogoUpload(event, 'logo_pemda')">
+                                            </label>
+                                            <button type="button" onclick="App.clearLogo('logo_pemda')" class="px-2 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-[11px] font-bold" title="Hapus Logo Pemda">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="border border-dashed border-slate-300 rounded-xl p-3 text-center bg-slate-50/60">
+                                        <p class="text-xs font-extrabold text-slate-700 mb-2">Logo Sekolah (Kanan)</p>
+                                        <div id="previewBoxLogoSekolah" class="w-20 h-20 mx-auto mb-2 rounded-xl bg-white border border-slate-200 flex items-center justify-center overflow-hidden">
+                                            <i class="fa-solid fa-school text-2xl text-slate-300"></i>
+                                        </div>
+                                        <div class="flex items-center justify-center gap-1.5">
+                                            <label class="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold cursor-pointer transition">
+                                                <i class="fa-solid fa-upload mr-1"></i> Upload Logo
+                                                <input type="file" accept="image/*" class="hidden" onchange="App.handleLogoUpload(event, 'logo_sekolah')">
+                                            </label>
+                                            <button type="button" onclick="App.clearLogo('logo_sekolah')" class="px-2 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-[11px] font-bold" title="Hapus Logo Sekolah">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Pilihan Sistem Hari Sekolah</label>
+                                    <select id="set_sistem_hari_sekolah" onchange="App.updateKopPreview()" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2.5 bg-white">
+                                        <option value="5 Hari Kerja (Senin - Jumat)">5 Hari Kerja (Senin - Jumat / Full Day)</option>
+                                        <option value="6 Hari Kerja (Senin - Sabtu)">6 Hari Kerja (Senin - Sabtu / Reguler)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Baris Pertama Kop Surat (Nama Pemerintah Daerah / Dinas)</label>
+                                    <input type="text" id="set_kop_baris1_pemda" oninput="App.updateKopPreview()" placeholder="Contoh: PEMERINTAH KABUPATEN NUSANTARA DINAS PENDIDIKAN"
+                                        class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Baris Kedua Kop Surat (Nama Sekolah)</label>
+                                    <input type="text" id="set_kop_baris2_sekolah" oninput="App.updateKopPreview()" placeholder="Contoh: SMP NEGERI 1 NUSANTARA"
+                                        class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Baris Ketiga Kop Surat (Alamat Ringkas pada Kop)</label>
+                                    <input type="text" id="set_kop_baris3_alamat" oninput="App.updateKopPreview()" placeholder="Contoh: Jl. Pendidikan No. 45, Kec. Nusantara Pusat"
+                                        class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                                            <i class="fa-solid fa-phone text-blue-600 mr-1"></i> Nomor Telepon
+                                        </label>
+                                        <input type="text" id="set_telepon" oninput="App.updateKopPreview()" placeholder="(022) 7654321"
+                                            class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                                            <i class="fa-solid fa-envelopes-bulk text-blue-600 mr-1"></i> Kode Pos
+                                        </label>
+                                        <input type="text" id="set_kode_pos" oninput="App.updateKopPreview()" placeholder="40123"
+                                            class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                                            <i class="fa-solid fa-envelope text-blue-600 mr-1"></i> Email Sekolah
+                                        </label>
+                                        <input type="email" id="set_email" oninput="App.updateKopPreview()" placeholder="info@sekolah.sch.id"
+                                            class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- KARTU 2: IDENTITAS SATUAN PENDIDIKAN, ALAMAT LENGKAP & KEPALA SEKOLAH -->
+                            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                                <h3 class="text-sm font-extrabold text-slate-800 border-b border-slate-100 pb-2.5 flex items-center gap-2">
+                                    <i class="fa-solid fa-building-columns text-indigo-600"></i>
+                                    2. Identitas Satuan Pendidikan, Alamat & Kepala Sekolah
+                                </h3>
+
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">NPSN</label>
+                                        <input type="text" id="set_npsn" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">NSS</label>
+                                        <input type="text" id="set_nss" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">Akreditasi</label>
+                                        <input type="text" id="set_akreditasi" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">Jenjang Pendidikan</label>
+                                        <input type="text" id="set_jenjang_pendidikan" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">Status Sekolah</label>
+                                        <select id="set_status_sekolah" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2 bg-white">
+                                            <option value="Negeri">Negeri</option>
+                                            <option value="Swasta">Swasta</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Alamat Lengkap & Kontak -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">Alamat Jalan</label>
+                                        <input type="text" id="set_alamat_jalan" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">Desa / Kelurahan</label>
+                                        <input type="text" id="set_kelurahan" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">Kecamatan</label>
+                                        <input type="text" id="set_kecamatan" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">Kabupaten / Kota</label>
+                                        <input type="text" id="set_kabupaten" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">Provinsi</label>
+                                        <input type="text" id="set_provinsi" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">Website</label>
+                                        <input type="text" id="set_website" oninput="App.updateKopPreview()" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                    </div>
+                                </div>
+
+                                <!-- Identitas Kepala Sekolah -->
+                                <div class="pt-3 border-t border-slate-100 space-y-3">
+                                    <h4 class="text-xs font-extrabold uppercase text-slate-600">
+                                        <i class="fa-solid fa-user-tie text-blue-600 mr-1"></i> Identitas Kepala Sekolah & Tanda Tangan Cetak
+                                    </h4>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-700 mb-1">Nama Kepala Sekolah</label>
+                                            <input type="text" id="set_kepsek_nama" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-700 mb-1">NIP Kepala Sekolah</label>
+                                            <input type="text" id="set_kepsek_nip" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-700 mb-1">Tempat / Kota Tanda Tangan</label>
+                                            <input type="text" id="set_titimangsa_kota" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal Cetak Rapor / Legger</label>
+                                            <input type="text" id="set_titimangsa_tanggal" class="w-full text-xs font-semibold border border-slate-300 rounded-xl px-3 py-2">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- KARTU 3: TAHUN AJARAN & SEMESTER -->
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                            <div class="flex flex-wrap items-center justify-between gap-4">
+                                <div class="flex-1 min-w-[260px]">
+                                    <h3 class="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                                        <i class="fa-solid fa-calendar-days text-emerald-600"></i>
+                                        3. Pengaturan Tahun Ajaran dan Semester Aktif
+                                    </h3>
+                                    <p class="text-xs text-slate-500">Ditampilkan pada seluruh laporan cetak, ekspor Excel, dan header aplikasi</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">Tahun Ajaran</label>
+                                        <input type="text" id="set_tahun_ajaran" placeholder="2026/2027" class="text-xs font-bold border border-slate-300 rounded-xl px-3 py-2 w-36">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1">Semester</label>
+                                        <select id="set_semester" class="text-xs font-bold border border-slate-300 rounded-xl px-3 py-2 bg-white w-36">
+                                            <option value="Ganjil">Ganjil (I)</option>
+                                            <option value="Genap">Genap (II)</option>
+                                        </select>
+                                    </div>
+                                    <div class="pt-4">
+                                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold shadow-md shadow-blue-600/20 transition flex items-center gap-2">
+                                            <i class="fa-solid fa-floppy-disk"></i> Simpan Seluruh Pengaturan
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- KARTU 4: BACKUP DAN RESTORE DALAM BENTUK JSON DAN SQL -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                        <div>
+                            <h3 class="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-shield-halved text-amber-600"></i>
+                                4. Backup dan Restore Database (Format JSON & SQL)
+                            </h3>
+                            <p class="text-xs text-slate-500">Cadangkan seluruh data guru, murid, kelas, mapel, nilai sumatif, analisis kelas IX, dan pengaturan sekolah ke file JSON atau SQL</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Panel Backup -->
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                                <h4 class="text-xs font-extrabold uppercase text-slate-700">
+                                    <i class="fa-solid fa-cloud-arrow-down text-blue-600 mr-1"></i> Unduh Backup Database
+                                </h4>
+                                <p class="text-xs text-slate-500">Pilih format pencadangan data yang Anda butuhkan:</p>
+                                <div class="flex flex-wrap gap-2.5">
+                                    <button type="button" onclick="App.downloadBackupJSON()" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-2">
+                                        <i class="fa-solid fa-file-code"></i> Backup Format JSON (.json)
+                                    </button>
+                                    <button type="button" onclick="App.downloadBackupSQL()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-2">
+                                        <i class="fa-solid fa-database"></i> Backup Format SQL (.sql)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Panel Restore -->
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                                <h4 class="text-xs font-extrabold uppercase text-slate-700">
+                                    <i class="fa-solid fa-cloud-arrow-up text-emerald-600 mr-1"></i> Restore / Pulihkan Database
+                                </h4>
+                                <p class="text-xs text-slate-500">Unggah file hasil backup (.json atau .sql) untuk memulihkan data:</p>
+                                <div class="flex flex-wrap gap-2.5">
+                                    <label class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-2 cursor-pointer">
+                                        <i class="fa-solid fa-upload"></i> Restore dari JSON (.json)
+                                        <input type="file" accept=".json" class="hidden" onchange="App.restoreFromJSON(event)">
+                                    </label>
+                                    <label class="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-2 cursor-pointer">
+                                        <i class="fa-solid fa-upload"></i> Restore dari SQL (.sql)
+                                        <input type="file" accept=".sql" class="hidden" onchange="App.restoreFromSQL(event)">
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL DIALOG (TAMBAH/EDIT GURU, MURID, KELAS, MAPEL) ==================== -->
+    <div id="modalOverlay" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 max-h-[90vh] flex flex-col">
+            <div class="px-5 py-4 bg-slate-900 text-white flex items-center justify-between">
+                <h3 id="modalTitle" class="text-sm font-extrabold">Form Data</h3>
+                <button onclick="App.closeModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div id="modalBody" class="p-5 overflow-y-auto space-y-4 text-xs"></div>
+        </div>
+    </div>
+
+    <!-- ==================== TOAST NOTIFICATION ==================== -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 no-print"></div>
+
+    <!-- ==================== AREA CETAK RESMI (KOP SURAT + TABEL + TTD WALI KELAS & KEPSEK) ==================== -->
+    <div id="printArea" class="hidden print-only p-4"></div>
+
+    <!-- Main Application Script -->
+    <script src="assets/js/app.js"></script>
+</body>
+</html>
