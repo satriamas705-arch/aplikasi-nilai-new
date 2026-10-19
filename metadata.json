@@ -1,0 +1,8 @@
+{
+  "name": "E-Penilaian SMP Terpadu",
+  "description": "Sistem Informasi Penilaian Terpadu & Analisis Nilai SMP - Nilai Sumatif, Legger Matriks, Analisis Kelas IX, Cetak SKNR, SKL, dan Transkrip Nilai.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

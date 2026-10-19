@@ -1,0 +1,103 @@
+/* Custom styles for Aplikasi Penilaian Terpadu SMP */
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Nav Item active styling */
+.nav-item.active {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.25);
+}
+
+/* Print styling */
+.print-only {
+  display: none;
+}
+
+@media print {
+  .no-print,
+  #appShell,
+  #modalOverlay,
+  #toastContainer,
+  header,
+  nav {
+    display: none !important;
+  }
+
+  .print-only,
+  #printArea {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .page-break {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  th, td {
+    border: 1px solid #1e293b !important;
+  }
+
+  @page {
+    size: auto;
+    margin: 12mm 15mm 15mm 15mm;
+  }
+}
+
+/* Print preview styles inside container */
+.preview-document {
+  font-family: 'Times New Roman', Times, serif;
+  color: #111827;
+  line-height: 1.35;
+}
+
+.preview-document h1,
+.preview-document h2,
+.preview-document h3 {
+  font-family: 'Times New Roman', Times, serif;
+  font-weight: bold;
+}
+
+/* Number input spinners */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
